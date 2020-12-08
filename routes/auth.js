@@ -27,7 +27,7 @@ const User = require('../model/User');
 router.post('/register', async (req, res) => {
     //checking if the user is already in the database
     const emailExist = await User.findOne({email: req.body.email});
-    if(emailExist) return res.status(400).send('Email already exists'); 
+    if(emailExist) return res.status(400).send({message:'Email already exists'}); 
 
     //Hash the password
     const N = 10;
@@ -51,11 +51,11 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
     //checking if the email exists
     const user = await User.findOne({email: req.body.email});
-    if(!user) return res.status(400).send('Email or password is wrong');
+    if(!user) return res.status(400).send({message:'Email or password is wrong'});
 
     //Check password
     const validPass = bcrypt.compareSync(req.body.password, user.password);
-    if(!validPass) return res.status(400).send('Email or password is wrong');
+    if(!validPass) return res.status(400).send({message:'Email or password is wrong'});
 
     //Create and assign a token
     const token = jwt.sign({
@@ -64,7 +64,7 @@ router.post('/login', async (req, res) => {
         role: user.role
     }, process.env.TOKEN_SECRET);
 
-    res.header('auth-token', token).status(200).send({message: 'success', jwt: token});
+    res.header('auth-token', token).status(200).send({message: 'success', token: token});
 });
 
 module.exports = router;
