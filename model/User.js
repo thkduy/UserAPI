@@ -12,11 +12,14 @@ const userSchema = new mongoose.Schema({
     },
     password: {
         type: String,
-        required: true,
     },
     accountType: {
         type: String,
         default: 'account'
+    },
+    accountId: {
+        type: String,
+        default: ''
     },
     role: {
         type: String,
