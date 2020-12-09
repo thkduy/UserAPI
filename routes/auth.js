@@ -4,25 +4,7 @@ const router = require('express').Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../model/User');
-
-// passport.use(
-//     'signup',
-//     new localStrategy(
-//         {
-//             usernameField: 'email',
-//             passwordField: 'password'
-//         },
-//         async (email, password, done) => {
-//             try {
-//                 const user = await UserModel.create({ email, password });
-
-//                 return done(null, user);
-//             } catch (error) {
-//                 done(error);
-//             }
-//         }
-//     )
-// );
+const request = require('request');
 
 router.post('/register', async (req, res) => {
     //checking if the user is already in the database
@@ -50,7 +32,7 @@ router.post('/register', async (req, res) => {
 
 router.post('/login', async (req, res) => {
     //checking if the email exists
-    const user = await User.findOne({email: req.body.email});
+    const user = await User.findOne({email: req.body.email, accountType: 'account', role: 'user'});
     if(!user) return res.status(400).send({message:'Email or password is wrong'});
 
     //Check password
@@ -66,5 +48,46 @@ router.post('/login', async (req, res) => {
 
     res.header('auth-token', token).status(200).send({message: 'success', token: token});
 });
+
+router.post('/login-google', async (req, res) => {
+    await request('https://www.googleapis.com/oauth2/v1/tokeninfo?access_token='+req.body.accessToken, { json: true }, async (err,resp, body) => {
+        if (err) { return console.log(err); }
+        const user = await User.findOne({ accountId: body.user_id });
+      if (!user){
+          //create new user account 
+          const user = new User({
+              name: req.body.name,
+              email: req.body.email,
+              password: '',
+              role: 'user',
+              accountType: 'google',
+              accountId: body.user_id
+          })
+          try {
+              const savedUser = await user.save();
+              //Create and assign a token
+              const token = jwt.sign({
+              _id: savedUser._id,
+              name: savedUser.name,
+              role: savedUser.role
+              }, process.env.TOKEN_SECRET);
+  
+              res.header('auth-token', token).status(200).send({ message: 'success', token: token });
+          }catch(err){
+              res.status(400).send(err);
+          }
+      } else{
+          //Create and assign a token
+          const token = jwt.sign({
+          _id: user._id,
+          name: user.name,
+          role: user.role
+          }, process.env.TOKEN_SECRET);
+
+          res.header('auth-token', token).status(200).send({ message: 'success', token: token });
+      }
+    });      
+});
+
 
 module.exports = router;
