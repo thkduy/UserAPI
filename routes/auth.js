@@ -77,7 +77,6 @@ router.post('/login-google', async (req, res) => {
               res.status(400).send(err);
           }
       } else{
-        console.log(user);
           //Create and assign a token
           const token = jwt.sign({
           _id: user._id,
