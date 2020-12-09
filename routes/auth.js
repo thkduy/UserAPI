@@ -32,7 +32,7 @@ router.post('/register', async (req, res) => {
 
 router.post('/login', async (req, res) => {
     //checking if the email exists
-    const user = await User.findOne({email: req.body.email, accountType: 'account'});
+    const user = await User.findOne({email: req.body.email, accountType: 'account', role: 'user'});
     if(!user) return res.status(400).send({message:'Email or password is wrong'});
 
     //Check password
@@ -88,5 +88,6 @@ router.post('/login-google', async (req, res) => {
       }
     });      
 });
+
 
 module.exports = router;

@@ -8,6 +8,7 @@ app.use('*', cors());
 
 //Import Routes
 const authRouth = require('./routes/auth');
+const adminAuthRouth = require('./routes/adminAuth');
 
 dotenv.config();
 
@@ -21,6 +22,7 @@ app.use(express.json());
 
 //Route Middlewares
 app.use('/api/user', authRouth);
+app.use('/api/admin', adminAuthRouth);
 
 const PORT = process.env.PORT || '3001';
 
