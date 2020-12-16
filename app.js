@@ -7,7 +7,17 @@ dotenv.config();
 
 const mongoose = require('mongoose');
 const cors = require('cors');
-const { createRoom, addParticipant, getPlayers, getViewers, removeUser } = require('./room');
+const {
+    createRoom,
+    addParticipant,
+    getPlayers,
+    getViewers,
+    removeUser,
+    addMessage,
+    getListMessages,
+    addBoardValues,
+    getBoardValues,
+    updateBoardValues } = require('./room');
 
 const io = require('socket.io')(http, {
     cors: {
@@ -30,7 +40,7 @@ io.on("connection", (socket) => {
         const {player} = createRoom({id: socket.id, user});
 
         io.emit('get-new-game-id',{ roomId: player.roomId });
-
+        addBoardValues(player.roomId);
         socket.join(player.roomId);
         io.to(player.roomId).emit('roomPlayer', { roomId: player.roomId, players: getPlayers(player.roomId) });
     });
@@ -47,6 +57,12 @@ io.on("connection", (socket) => {
             io.to(participant.roomId).emit('roomViewer', { roomId: participant.roomId, viewers: getViewers(participant.roomId) });  
         }
     });
+
+    socket.on('userSendMessage', ({roomId, message}) => {
+        addMessage(message, roomId);
+        //console.log(getListMessages(roomId));
+        io.to(roomId).emit('serverBroadcastMessages', getListMessages(roomId));
+    })
 
     //leave game
     socket.on('leave-game', () => {
@@ -69,6 +85,11 @@ io.on("connection", (socket) => {
 
         io.emit("sendListOnline", listOnline);
     });
+
+    socket.on("playerSendPace", ({roomId, pace}) => {
+        updateBoardValues(roomId, pace);
+        io.to(roomId).emit('serverSendBoardValues', getBoardValues(roomId));
+    });
     
 
     socket.on("disconnect", () => {
@@ -87,8 +108,6 @@ const adminAuthRouth = require('./routes/adminAuth');
 
 //Route Middlewares
 app.use('/api/user', authRouth);
-
-
 
 //connect to DB
 mongoose.connect(process.env.DB_CONNECT, { useNewUrlParser: true, useUnifiedTopology: true }, () => 

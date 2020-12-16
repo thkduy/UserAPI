@@ -1,5 +1,9 @@
 const players = []; //contain object {id socket, user info, room id}
 const viewers = []; //contain object {id socket, user info, room id}
+
+const listMessages = []; // {message: {name, content}, roomId}
+const listBoardsValues = []; // {roomId, data: {boardValues}}
+
 function makeid(length) {
   var result           = '';
   var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -51,4 +55,51 @@ const removeUser = (id) => {
 const getPlayers = (roomId) => players.filter((user) => user.roomId === roomId);
 const getViewers = (roomId) => viewers.filter((user) => user.roomId === roomId);
 
-module.exports = { createRoom, addParticipant, getPlayers, getViewers, removeUser };
+const addMessage = (message, roomId) => {
+  listMessages.push({message, roomId});
+}
+
+const getListMessages = (roomId) => {
+  return listMessages
+                .filter((e) => e.roomId === roomId)
+                .map(({message, roomId}) => message);
+}
+
+const addBoardValues = (roomId) => {
+  const defaultAllValues = new Array(16);
+  for (let i = 0; i < 16; i++){
+    defaultAllValues[i] = new Array(16);
+    for (let j = 0; j < 16; j++){
+      defaultAllValues[i][j] = 0;
+    }
+  }
+  listBoardsValues.push({roomId: roomId, data: {boardValues: defaultAllValues}});
+}
+
+const getBoardValues = (roomId) => {
+  for (let i = 0; i < listBoardsValues.length; i++){
+    if (listBoardsValues[i]["roomId"] === roomId){
+      return listBoardsValues[i]["data"];
+    }
+  }
+  return null;
+}
+
+const updateBoardValues = (roomId, pace) => {
+  const boardValues = getBoardValues(roomId).boardValues;
+  if (boardValues){
+    boardValues[pace.row][pace.column] = pace.value;
+  }
+}
+module.exports = {
+  createRoom,
+  addParticipant,
+  getPlayers,
+  getViewers,
+  removeUser,
+  addMessage,
+  getListMessages,
+  addBoardValues,
+  getBoardValues,
+  updateBoardValues,
+};
