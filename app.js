@@ -9,18 +9,32 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const { createRoom, addParticipant, getPlayers, getViewers, removeUser } = require('./room');
 
-const io = require('socket.io')(http, {
-    cors: {
-        origin: `${process.env.FRONTEND_URL}`,
-        methods: ["GET", "POST"],
-        credentials: true
-    }
-});
+
 app.use('*', cors());
 
 app.use(express.json());
 
+//Import Routes
+const authRouth = require('./routes/auth');
+const adminAuthRouth = require('./routes/adminAuth');
+
+//Route Middlewares
+app.use('/api/user', authRouth);
+
+//connect to DB
+mongoose.connect(process.env.DB_CONNECT, { useNewUrlParser: true, useUnifiedTopology: true }, () => 
+    console.log('DB connect successfully')
+);
+
 let listOnline = {};
+
+const io = require('socket.io')(http, {
+    cors: {
+        origin: '*',
+        methods: ["GET", "POST"],
+        credentials: true
+    }
+});
 
 io.on("connection", (socket) => {
 
@@ -81,21 +95,7 @@ io.on("connection", (socket) => {
 
 })
 
-//Import Routes
-const authRouth = require('./routes/auth');
-const adminAuthRouth = require('./routes/adminAuth');
-
-//Route Middlewares
-app.use('/api/user', authRouth);
-
-
-
-//connect to DB
-mongoose.connect(process.env.DB_CONNECT, { useNewUrlParser: true, useUnifiedTopology: true }, () => 
-    console.log('DB connect successfully')
-);
-
-const PORT = process.env.PORT || '3001';
+const PORT = process.env.PORT || 3001;
 
 http.listen(PORT, () => {
     console.log(`Server up and running : http://localhost:${PORT}/`);
