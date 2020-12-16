@@ -9,7 +9,6 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const { createRoom, addParticipant, getPlayers, getViewers, removeUser } = require('./room');
 
-
 app.use('*', cors());
 
 app.use(express.json());
@@ -31,8 +30,6 @@ let listOnline = {};
 const io = require('socket.io')(http, {
     cors: {
         origin: '*',
-        methods: ["GET", "POST"],
-        credentials: true
     }
 });
 
