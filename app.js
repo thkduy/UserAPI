@@ -44,11 +44,6 @@ mongoose.connect(process.env.DB_CONNECT, { useNewUrlParser: true, useUnifiedTopo
 
 let listOnline = {};
 
-const io = require('socket.io')(http, {
-    cors: {
-        origin: '*',
-    }
-});
 
 io.on("connection", (socket) => {
 
@@ -120,10 +115,6 @@ io.on("connection", (socket) => {
 
 })
 
-//Import Routes
-const authRouth = require('./routes/auth');
-const adminAuthRouth = require('./routes/adminAuth');
-
 //Route Middlewares
 app.use('/api/user', authRouth);
 
@@ -132,7 +123,6 @@ mongoose.connect(process.env.DB_CONNECT, { useNewUrlParser: true, useUnifiedTopo
     console.log('DB connect successfully')
 );
 
-const PORT = process.env.PORT || '3001';
 const PORT = process.env.PORT || 3001;
 
 http.listen(PORT, () => {
