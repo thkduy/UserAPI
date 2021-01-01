@@ -28,20 +28,21 @@ app.use('*', cors());
 
 app.use(express.json());
 
-//Import Routes
-const authRouth = require('./routes/auth');
-const adminAuthRouth = require('./routes/adminAuth');
-
-//Route Middlewares
-app.use('/api/user', authRouth);
-
 //connect to DB
 mongoose.connect(process.env.DB_CONNECT, { useNewUrlParser: true, useUnifiedTopology: true }, () =>
     console.log('DB connect successfully')
 );
 
-let listOnline = {};
+//Import Routes
+const authRouth = require('./routes/auth');
+const adminAuthRouth = require('./routes/adminAuth');
+const accountRoute = require('./routes/account');
 
+//Route Middlewares
+app.use('/api/user', authRouth);
+app.use('/api/account', accountRoute);
+
+let listOnline = {};
 
 io.on("connection", (socket) => {
 
@@ -112,14 +113,6 @@ io.on("connection", (socket) => {
     });
 
 })
-
-//Route Middlewares
-app.use('/api/user', authRouth);
-
-//connect to DB
-mongoose.connect(process.env.DB_CONNECT, { useNewUrlParser: true, useUnifiedTopology: true }, () => 
-    console.log('DB connect successfully')
-);
 
 const PORT = process.env.PORT || 3001;
 
