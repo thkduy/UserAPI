@@ -29,7 +29,7 @@ app.use('*', cors());
 app.use(express.json());
 
 //connect to DB
-mongoose.connect(process.env.DB_CONNECT, { useNewUrlParser: true, useUnifiedTopology: true }, () =>
+mongoose.connect(process.env.DB_CONNECT, { useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false }, () =>
     console.log('DB connect successfully')
 );
 
