@@ -6,6 +6,8 @@ const jwt = require('jsonwebtoken');
 const User = require('../model/User');
 const request = require('request');
 
+const nodeMailer = require('../sendMail');
+
 router.post('/register', async (req, res) => {
     //checking if the user is already in the database
     const emailExist = await User.findOne({email: req.body.email});
@@ -24,8 +26,14 @@ router.post('/register', async (req, res) => {
     })
     try {
         const savedUser = await user.save();
-        res.send({user: user._id});
+        //send email activate account
+        const token = jwt.sign({
+            _id: user._id,
+        }, process.env.TOKEN_SECRET);
+        const data = await nodeMailer.sendMailActivate(user.email, token);
+        res.status(200).send({user: user._id});
     }catch(err){
+        console.log(err);
         res.status(400).send(err);
     }
 });
@@ -34,6 +42,8 @@ router.post('/login', async (req, res) => {
     //checking if the email exists
     const user = await User.findOne({email: req.body.email, accountType: 'account', role: 'user'});
     if(!user) return res.status(400).send({message:'Email or password is wrong'});
+
+    if(!user.isActivate) return res.status(400).send({message:'Your account has not been activated. Check email to activate!'})
 
     //Check password
     const validPass = bcrypt.compareSync(req.body.password, user.password);
