@@ -22,7 +22,6 @@ router.post('/register', async (req, res) => {
         name: req.body.name,
         email: req.body.email,
         password: hashedPassword,
-        role: 'user'
     })
     try {
         const savedUser = await user.save();
@@ -40,7 +39,7 @@ router.post('/register', async (req, res) => {
 
 router.post('/login', async (req, res) => {
     //checking if the email exists
-    const user = await User.findOne({email: req.body.email, accountType: 'account', role: 'user'});
+    const user = await User.findOne({email: req.body.email, accountType: 'account'});
     if(!user) return res.status(400).send({message:'Email or password is wrong'});
 
     if(!user.isActivate) return res.status(400).send({message:'Your account has not been activated. Check email to activate!'})
@@ -53,7 +52,6 @@ router.post('/login', async (req, res) => {
     const token = jwt.sign({
         _id: user._id, 
         name: user.name,
-        role: user.role
     }, process.env.TOKEN_SECRET);
 
     res.header('auth-token', token).status(200).send({message: 'success', token: token});
@@ -69,9 +67,9 @@ router.post('/login-google', async (req, res) => {
               name: req.body.name,
               email: req.body.email,
               password: '',
-              role: 'user',
               accountType: 'google',
-              accountId: body.user_id
+              accountId: body.user_id,
+              isActivate: true
           })
           try {
               const savedUser = await user.save();
@@ -79,7 +77,6 @@ router.post('/login-google', async (req, res) => {
               const token = jwt.sign({
               _id: savedUser._id,
               name: savedUser.name,
-              role: savedUser.role
               }, process.env.TOKEN_SECRET);
   
               res.header('auth-token', token).status(200).send({ message: 'success', token: token });
@@ -91,7 +88,6 @@ router.post('/login-google', async (req, res) => {
           const token = jwt.sign({
           _id: user._id,
           name: user.name,
-          role: user.role
           }, process.env.TOKEN_SECRET);
 
           res.header('auth-token', token).status(200).send({ message: 'success', token: token });

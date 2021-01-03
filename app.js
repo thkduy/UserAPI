@@ -33,14 +33,15 @@ mongoose.connect(process.env.DB_CONNECT, { useNewUrlParser: true, useUnifiedTopo
     console.log('DB connect successfully')
 );
 
-//Import Routes
-const authRouth = require('./routes/auth');
-const adminAuthRouth = require('./routes/adminAuth');
-const accountRoute = require('./routes/account');
 
+//Import Routes
+const authRoute = require('./routes/auth');
+const adminAuthRoute = require('./routes/adminAuth');
+const accountRoute = require('./routes/account');
 //Route Middlewares
-app.use('/api/user', authRouth);
+app.use('/api/user', authRoute);
 app.use('/api/account', accountRoute);
+app.use('/api/admin',adminAuthRoute);
 
 let listOnline = {};
 
