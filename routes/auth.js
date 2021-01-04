@@ -37,6 +37,35 @@ router.post('/register', async (req, res) => {
     }
 });
 
+// router.post('/login', async (req, res, next) => {
+//     passport.authenticate('login', async (err, user, info) => {
+//         try {
+//             if (err || !user) {
+//                 const error = new Error('An error occurred.');
+
+//                 return next(error);
+//             }
+
+//             req.login(
+//                 user,
+//                 { session: false },
+//                 async (error) => {
+//                     if (error) return next(error);
+
+//                     const body = { _id: user._id, name: user.name };
+//                     const token = jwt.sign({ user: body }, 'caroonline');
+
+//                     return res.status(200).send({message: 'success', token: token});
+//                 }
+//             );
+//         } catch (error) {
+//             return next(error);
+//         }
+//     }
+//     )(req, res, next);
+// }
+// );
+
 router.post('/login', async (req, res) => {
     //checking if the email exists
     const user = await User.findOne({email: req.body.email, accountType: 'account'});
