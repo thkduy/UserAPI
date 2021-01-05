@@ -11,12 +11,31 @@ const transporter = mailer.createTransport({ // config mail server
 module.exports = {
     sendMailActivate: async (email, token) => {
         const linkMail = process.env.FRONTEND_URL + `/activate/${token}`;
-        const mainOptions = { // thiết lập đối tượng, nội dung gửi mail
+        const mainOptions = {
             from: 'CaroOnline',
             to: email,
             subject: 'Mail Activate account Caro online',
             text: 'You recieved message from ' + 'systemauction2019@gmail.com',
-            html: `<p>You have got a link for active your account</p><br/><ul><li>Link: <a href='${linkMail}'> ${linkMail} </a></li></ul>`
+            html: `<p>You have got a link for active your account</p><br/><ul><li>Link: <a href='${linkMail}'> Click here to activate account </a></li></ul>`
+        }
+        await transporter.sendMail(mainOptions, function (err, info) {
+            if (err) {
+                console.log(err);
+            } else {
+                console.log('Message sent: ' + info.response);
+            }
+        });
+
+        return 1;
+    },
+    sendMailChangePassword: async (email, token) => {
+        const linkMail = process.env.FRONTEND_URL + `/change-password/${token}`;
+        const mainOptions = {
+            from: 'CaroOnline',
+            to: email,
+            subject: 'Mail change password account Caro online',
+            text: 'You recieved message from ' + 'systemauction2019@gmail.com',
+            html: `<p>You have got a link to change your password</p><br/><ul><li>Link: <a href='${linkMail}'> Click here to change password </a></li></ul>`
         }
         await transporter.sendMail(mainOptions, function (err, info) {
             if (err) {

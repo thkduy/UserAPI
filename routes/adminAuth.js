@@ -10,16 +10,16 @@ router.post('/login', async (req, res) => {
     if(!admin) return res.status(400).send({message:'Email or password is wrong'});
 
     //Check password
-    const validPass = bcrypt.compareSync(req.body.password, user.password);
+    const validPass = bcrypt.compareSync(req.body.password, admin.password);
     if(!validPass) return res.status(400).send({message:'Email or password is wrong'});
 
     //Create and assign a token
     const token = jwt.sign({
-        _id: user._id, 
-        name: user.name,
+        _id: admin._id, 
+        name: admin.name,
     }, process.env.TOKEN_SECRET);
 
-    res.header('auth-token', token).status(200).send({message: 'success', token: token});
+    res.status(200).send({message: 'success', token: token});
 });
 
 
