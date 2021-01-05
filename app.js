@@ -4,10 +4,10 @@ const http = require('http').createServer(app);
 
 const dotenv = require('dotenv');
 dotenv.config();
-// const passport = require('passport');
-// const bodyParser = require('body-parser');
-// require('./auth/passport');
-// app.use(bodyParser.urlencoded({ extended: false }));
+const passport = require('passport');
+const bodyParser = require('body-parser');
+require('./auth/passport');
+app.use(bodyParser.urlencoded({ extended: false }));
 const mongoose = require('mongoose');
 const cors = require('cors');
 const {
@@ -40,10 +40,12 @@ mongoose.connect(process.env.DB_CONNECT, { useNewUrlParser: true, useUnifiedTopo
 const authRoute = require('./routes/auth');
 const adminAuthRoute = require('./routes/adminAuth');
 const accountRoute = require('./routes/account');
+const adminDo = require('./routes/admin');
 //Route Middlewares
 app.use('/api/user', authRoute);
 app.use('/api/account', accountRoute);
 app.use('/api/admin', adminAuthRoute);
+app.use('/api/admin/do', passport.authenticate('admin', {session: false}), adminDo);
 
 let listOnline = {};
 

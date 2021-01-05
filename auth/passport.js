@@ -1,50 +1,28 @@
-// const passport = require('passport');
-// const localStrategy = require('passport-local').Strategy;
-// const UserModel = require('../model/User');
+const passport = require('passport');
+const UserModel = require('../model/User');
+const AdminModel = require('../model/Admin');
+const ObjectId = require('mongodb').ObjectId;
+const passportJWT = require("passport-jwt");
+const ExtractJwt = passportJWT.ExtractJwt;
+const JWTStrategy = passportJWT.Strategy;
+let opts = {};
+opts.jwtFromRequest = ExtractJwt.fromAuthHeaderAsBearerToken();
+opts.secretOrKey = process.env.TOKEN_SECRET;
 
-// passport.use(
-//     'login',
-//     new localStrategy(
-//         {
-//             usernameField: 'email',
-//             passwordField: 'password'
-//         },
-//         async (email, password, done) => {
-//             try {
-//                 const user = await UserModel.findOne({ email: email, accountType: 'account' });
+passport.use('user', new JWTStrategy(opts, async (jwt_payload, next) => {
+    var user = await UserModel.findById(jwt_payload._id);
+    if (user) {
+        next(null, user);
+    } else {
+        next(null, false);
+    }
+}));
 
-//                 if (!user) {
-//                     return done(null, false, { message: 'Email or password is wrong' });
-//                 }
-
-//                 if (!user.isActivate)
-//                     return done(null, false, { message: 'Your account has not been activated. Check email to activate!' });
-//                 //return res.status(400).send({message:'Your account has not been activated. Check email to activate!'})
-
-//                 const validate = await user.isValidPassword(password);
-
-//                 if (!validate) {
-//                     return done(null, false, { message: 'Email or password is wrong' });
-//                 }
-
-//                 return done(null, user, { message: 'Logged in Successfully' });
-//             } catch (error) {
-//                 return done(error);
-//             }
-//         }
-//     )
-// );
-
-// passport.use(new JWTStrategy({
-//     jwtFromRequest: ExtractJWT.fromAuthHeaderAsBearerToken(),
-//     secretOrKey: 'caroonline'
-// }, async (jwt_payload, done) => {
-//     var user = await UserModel.findById(jwt_payload.id);
-//     if (user) {
-//         return done(null, user);
-//     } else {
-//         return done(err, false, {message: 'Access Denied.'});
-//     }
-// }));
-  
-  
+passport.use('admin', new JWTStrategy(opts, async (jwt_payload, next) => {
+    const admin = await AdminModel.findById(jwt_payload._id);
+    if (admin) {
+        next(null, admin);
+    } else {
+        next(null, false);
+    }
+})); 
