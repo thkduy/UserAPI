@@ -16,14 +16,19 @@ router.get('/get-all-user', async (req, res)=>{
 
 router.get('/get-user', async (req, res)=>{
     const idUser = req.query.id; 
-    const user = await UserModel.findById(idUser);
-    user.password = undefined;
-    res.send(user);
+    await UserModel.findById(idUser,function(err, user) {
+        user.password = undefined;
+        if (err) {
+          console.log(err);
+        } else {
+          res.status(200).send({data:user});
+        }
+    });
 });
 
 router.post('/lock-account', async (req, res)=>{
     const idUser = req.body.id;
-    await UserModel.findByIdAndUpdate({ _id: idUser }, { isDelete: false }, function (err, result) {
+    await UserModel.findByIdAndUpdate({ _id: idUser }, { isDelete: true }, function (err, result) {
         if (err) {
             res.status(400).send(err);
         } else {
@@ -33,22 +38,23 @@ router.post('/lock-account', async (req, res)=>{
 });
 
 router.get('/get-all-room', async (req, res)=>{
-    const roomData = await RoomModel.find();//.populate({path: 'steps'}).populate({path: 'messages',populate: {path: 'owner', select: 'name'}});
+    const roomData = await RoomModel.find().populate({path: 'player1', select: 'name avatar'}).populate({path: 'player2', select: 'name avatar'});
     for(let i = 0; i < roomData.length; i++){
         roomData[i].messages = undefined;
         roomData[i].steps = undefined;
     }
-    res.status(200).json({ Data: roomData });
+    res.status(200).json({ data: roomData });
 });
 
 router.get('/get-all-room-by-id', async (req, res)=>{
     const idUser = req.query.id; 
-    const roomData = await RoomModel.find({$or:[{'player1':ObjectId(idUser)}, {'player2':ObjectId(idUser)}]});
+    const roomData = await RoomModel.find({$or:[{'player1':ObjectId(idUser)}, {'player2':ObjectId(idUser)}]})
+    .populate({path: 'player1', select: 'name avatar'}).populate({path: 'player2', select: 'name avatar'});;
     for(let i = 0; i < roomData.length; i++){
         roomData[i].messages = undefined;
         roomData[i].steps = undefined;
     }
-    res.status(200).json({ Data: roomData });
+    res.status(200).json({ data: roomData });
 });
 
 router.get('/get-chat-room-by-id', async (req, res)=>{
@@ -57,7 +63,7 @@ router.get('/get-chat-room-by-id', async (req, res)=>{
     for(let i = 0; i < roomData.length; i++){
         roomData[i].steps = undefined;
     }
-    res.status(200).json({ Data: roomData });
+    res.status(200).json({ data: roomData });
 });
 
 module.exports = router;
