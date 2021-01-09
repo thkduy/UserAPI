@@ -59,7 +59,7 @@ router.get('/get-all-room-by-id', async (req, res)=>{
 
 router.get('/get-chat-room-by-id', async (req, res)=>{
     const idRoom = req.query.id; 
-    const roomData = await RoomModel.find({roomId:idRoom}).populate({path: 'messages',populate: {path: 'owner', select: 'name'}});;
+    const roomData = await RoomModel.find({roomId:idRoom}).populate({path: 'messages',populate: {path: 'owner', select: 'name avatar'}});;
     for(let i = 0; i < roomData.length; i++){
         roomData[i].steps = undefined;
     }
