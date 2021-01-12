@@ -43,7 +43,9 @@ router.post('/login', async (req, res) => {
     const user = await User.findOne({ email: req.body.email, accountType: 'account' });
     if (!user) return res.status(400).send({ message: 'Email or password is wrong' });
 
-    if (!user.isActivate) return res.status(400).send({ message: 'Your account has not been activated. Check email to activate!' })
+    if (!user.isActivate) return res.status(400).send({ message: 'Your account has not been activated. Check email to activate!' });
+
+    if(user.isDelete) return res.status(400).send({message:'Your account has been banned!'});
 
     //Check password
     const validPass = bcrypt.compareSync(req.body.password, user.password);
@@ -66,6 +68,7 @@ router.post('/login-google', async (req, res) => {
     await request('https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=' + req.body.accessToken, { json: true }, async (err, resp, body) => {
         if (err) { return console.log(err); }
         const user = await User.findOne({ accountId: body.user_id, accountType: 'google' });
+        
         if (!user) {
             //create new user account 
             const user = new User({
@@ -90,6 +93,7 @@ router.post('/login-google', async (req, res) => {
                 res.status(400).send(err);
             }
         } else {
+            if(user.isDelete) return res.status(400).send({message:'Your account has been banned!'});
             //Create and assign a token
             const token = jwt.sign({
                 _id: user._id,
@@ -133,6 +137,7 @@ router.post('/login-facebook', async (req, res) => {
                 res.status(400).send(err);
             }
         } else {
+            if(user.isDelete) return res.status(400).send({message:'Your account has been banned!'});
             //Create and assign a token
             const token = jwt.sign({
                 _id: user._id,
