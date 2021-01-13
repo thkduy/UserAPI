@@ -45,11 +45,13 @@ const authRoute = require('./routes/auth');
 const adminAuthRoute = require('./routes/adminAuth');
 const accountRoute = require('./routes/account');
 const adminDo = require('./routes/admin');
+const userDo = require('./routes/user');
 //Route Middlewares
 app.use('/api/user', authRoute);
 app.use('/api/account', accountRoute);
 app.use('/api/admin', adminAuthRoute);
 app.use('/api/admin/do', passport.authenticate('admin', {session: false}), adminDo);
+app.use('/api/user/do', passport.authenticate('user', {session: false}), userDo);
 
 io.on("connection", (socket) => {
     require('./socket/socket')(io, socket);
