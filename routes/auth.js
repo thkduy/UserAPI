@@ -55,10 +55,13 @@ router.post('/login', async (req, res) => {
     const token = jwt.sign({
         _id: user._id,
         name: user.name,
+        email: user.email,
+        accountType: user.accountType,
         point: user.point,
         totalWin: user.totalWin,
         numOfMatches: user.numOfMatches,
         avatar: user.avatar,
+        createdDate: user.createdDate
     }, process.env.TOKEN_SECRET);
 
     res.status(200).send({ message: 'success', token: token });
@@ -98,10 +101,13 @@ router.post('/login-google', async (req, res) => {
             const token = jwt.sign({
                 _id: user._id,
                 name: user.name,
+                email: user.email,
+                accountType: user.accountType,
                 point: user.point,
                 totalWin: user.totalWin,
                 numOfMatches: user.numOfMatches,
                 avatar: user.avatar,
+                createdDate: user.createdDate
             }, process.env.TOKEN_SECRET);
 
             res.status(200).send({ message: 'success', token: token });
@@ -142,10 +148,13 @@ router.post('/login-facebook', async (req, res) => {
             const token = jwt.sign({
                 _id: user._id,
                 name: user.name,
+                email: user.email,
+                accountType: user.accountType,
                 point: user.point,
                 totalWin: user.totalWin,
                 numOfMatches: user.numOfMatches,
                 avatar: user.avatar,
+                createdDate: user.createdDate
             }, process.env.TOKEN_SECRET);
 
             res.status(200).send({ message: 'success', token: token });
