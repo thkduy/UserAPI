@@ -1,17 +1,5 @@
-const {getBoardValues} = require("./room");
-const {updateBoardValues} = require("./room");
-const {removeUser} = require("./room");
-const {getListMessages} = require("./room");
-const {addMessage} = require("./room");
-const {getViewers} = require("./room");
-const {addParticipant} = require("./room");
-const {getPlayers} = require("./room");
-const {addBoardValues} = require("./room");
-const {createRoom} = require("./room");
-
 const tempData = require("./temporaryData");
 const makeId = require("../util/util");
-const {TempRoom} = require("./temporaryData");
 
 let listOnline = {};
 module.exports = (io, socket) => {
@@ -23,33 +11,77 @@ module.exports = (io, socket) => {
     const newId = makeId(5);
     const tempRoom = {
       id: newId,
-      player1: null,
+      player1: user,
+      player1Status: false,
       player2: null,
-      viewers: [],
+      player2Status: false,
+      currentResultStatus: -1,
+      playTurn: 0,
+      viewers: [user],
       messages: [],
-      matches: [],
-      lastMatch: {},
+      lastMatch: null,
       password: ""
     }
-    tempData.addRoom(tempRoom);
 
-    socket.emit('new-game-id',tempRoom.id);
+    tempData.addRoom(tempRoom);
     socket.join(tempRoom.id);
+    socket.emit('new-game-id',tempRoom.id);
+    socket.emit('room-info', tempRoom);
     //io.to(tempRoom.roomId).emit('roomPlayer', { roomId: player.roomId, players: getPlayers(player.roomId) });
   });
-  // //join game
-  // socket.on('join-game', ({user, roomId}, callback) => {
-  //   console.log('join-game');
-  //   const { error, participant } = addParticipant({ id: socket.id, user, roomId });
-  //
-  //   if(error) return callback(error);
-  //   else{
-  //     socket.join(participant.roomId);
-  //     callback();
-  //     io.to(participant.roomId).emit('roomPlayer', { roomId: participant.roomId, players: getPlayers(participant.roomId) });
-  //     io.to(participant.roomId).emit('roomViewer', { roomId: participant.roomId, viewers: getViewers(participant.roomId) });
-  //   }
-  // });
+  //join game
+  socket.on('join-game', (roomId, user, callback) => {
+    console.log('join-game');
+    try {
+      tempData.addViewerToRoom(roomId, user);
+      socket.join(roomId);
+      io.to(roomId).emit('room-info', tempData.getRoom(roomId));
+      callback();
+    } catch (e) {
+      callback(e.message);
+    }
+  });
+
+  //set-player
+  socket.on('set-player', (roomId, playerNum, user) => {
+    tempData.setPlayer(roomId, playerNum, user);
+    io.to(roomId).emit('room-info', tempData.getRoom(roomId));
+    if (tempData.canCreateNewMatch(roomId)) {
+      io.to(roomId).emit('ask-for-starting-new-match', roomId);
+    }
+  });
+
+  //starting new match
+  socket.on('accept-start-new-match', (roomId, playerNumber) => {
+    //check can we start here
+    console.log('accept-start-new-match ' + roomId + ' ' + playerNumber)
+    tempData.setPlayerStatus(roomId, playerNumber, true);
+    console.log(JSON.stringify(tempData.getRoom(roomId)));
+    if (tempData.areAllPlayersReady(roomId)) {
+      tempData.createNewMatchToRoom(roomId);
+      io.to(roomId).emit('start-new-match', roomId, tempData.getPlayTurn(roomId));
+      io.to(roomId).emit('room-info', tempData.getRoom(roomId));
+    }
+  });
+
+  //handle chess moves
+  socket.on('chess-move', (roomId, row, col) => {
+    console.log('chess-move ' + roomId + ' ' + row + ' ' + col);
+    const gameResult = tempData.handleNewChessMove(roomId, row, col); //{playTurn, winLine}
+    io.to(roomId).emit('room-info', tempData.getRoom(roomId));
+    if (gameResult) {
+      io.to(roomId).emit('end-game', gameResult)
+    }
+
+  });
+
+  socket.on('stand-up', (roomId, sessionPlayer) => {
+    tempData.removePlayer(roomId, sessionPlayer);
+    io.to(roomId).emit('room-info', tempData.getRoom(roomId));
+  })
+
+
+
   //
   // socket.on('userSendMessage', ({roomId, message}) => {
   //   addMessage(message, roomId);
