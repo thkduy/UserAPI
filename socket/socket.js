@@ -3,9 +3,25 @@ const makeId = require("../util/util");
 
 let listOnline = {};
 module.exports = (io, socket) => {
+  socket.emit('list-online', tempData.users);
+  socket.on('new-user-online', user => {
+    console.log('new-user-online ' + JSON.stringify(user));
+    if (user) {
+      socket.user = user;
+      tempData.addUser(user._id, user.name, user.avatar);
+    }
+  });
+  socket.on('disconnect', (reason) => {
+    console.log('disconnect ' + reason);
+    console.log(socket.user);
+    if (socket.user) {
+      tempData.removeUser(socket.user._id);
+      io.emit('list-online', tempData.users);
+    }
+
+  })
   //create game
   socket.on('create-game', (user) => {
-
     console.log('create-game');
     //const {player} = createRoom({id: socket.id, user});
     const newId = makeId(5);
@@ -78,8 +94,36 @@ module.exports = (io, socket) => {
   socket.on('stand-up', (roomId, sessionPlayer) => {
     tempData.removePlayer(roomId, sessionPlayer);
     io.to(roomId).emit('room-info', tempData.getRoom(roomId));
+  });
+
+  socket.on('message', (roomId, user, curMessage) => {
+    tempData.addMessage(roomId, user, curMessage);
+    io.to(roomId).emit('messages', tempData.getMessages(roomId).map(value => {
+      return {name: value.owner.name, content: value.content}
+    }));
+  });
+
+  socket.on('all-rooms-info', () => {
+    socket.emit('all-rooms-info', tempData.rooms.map(value => {
+      return {
+        roomId: value.id,
+        player1: value.player1? value.player1.name : '',
+        player2: value.player2? value.player2.name : '',
+        isLock: !!value.password,
+      }
+    }));
   })
 
+  const emitAllRoomsInterval = setInterval(() => {
+    socket.emit('all-rooms-info', tempData.rooms.map(value => {
+      return {
+        roomId: value.id,
+        player1: value.player1? value.player1.name : '',
+        player2: value.player2? value.player2.name : '',
+        isLock: !!value.password,
+      }
+    }));
+  }, 2000);
 
 
   //

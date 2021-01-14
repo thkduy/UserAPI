@@ -10,17 +10,6 @@ require('./auth/passport');
 app.use(bodyParser.urlencoded({ extended: false }));
 const mongoose = require('mongoose');
 const cors = require('cors');
-const {
-    createRoom,
-    addParticipant,
-    getPlayers,
-    getViewers,
-    removeUser,
-    addMessage,
-    getListMessages,
-    addBoardValues,
-    getBoardValues,
-    updateBoardValues } = require('./socket/room');
 
 const io = require('socket.io')(http, {
     cors: {

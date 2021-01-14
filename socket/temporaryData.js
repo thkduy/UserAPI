@@ -1,5 +1,50 @@
 const makeId = require("../util/util");
 const rooms = [];
+let users = [];
+const playNows = [];
+
+const addPlayNow = (user) => {
+  if (!user) {
+    return false;
+  }
+  const exUser = playNows.find((value) => value._id === user._id);
+  if (exUser) {
+    return false;
+  }
+  users.push(user);
+}
+
+const removePlayNow = (user) => {
+  let index = -1;
+  for (let i = 0; i < playNows.length; i++) {
+    if (playNows[i]["_id"] === user._id) {
+      index = i;
+    }
+  }
+  if (index != -1) {
+    playNows.splice(index, 1);
+  }
+}
+
+const addUser = (_id, name, avatar) => {
+  const exUser = users.find((value) => value._id === _id);
+  if (exUser) {
+    return false;
+  }
+  users.push({_id, name, avatar});
+}
+
+const removeUser = (_id) => {
+  let index = -1;
+  for (let i = 0; i < users.length; i++) {
+    if (users[i]["_id"] === _id) {
+      index = i;
+    }
+  }
+  if (index != -1) {
+    users.splice(index, 1);
+  }
+}
 
 const addRoom = (tempRoom) => {
   rooms.push(tempRoom);
@@ -283,8 +328,31 @@ const togglePlayTurn = (roomId) => {
   return true;
 }
 
+const addMessage = (roomId, user, curMessage) => {
+  const room = getRoom(roomId);
+  if (!room) {
+    return false;
+  }
+  let message = {
+    owner: user,
+    content: curMessage,
+    date: new Date(),
+  }
+
+  room.messages.push(message);
+}
+
+const getMessages = (roomId) => {
+  const room = getRoom(roomId);
+  if (!room) {
+    return [];
+  }
+  return room.messages;
+}
+
 module.exports = {
   rooms: rooms,
+  users: users,
   addRoom: addRoom,
   getRoom: getRoom,
   addViewerToRoom: addViewerToRoom,
@@ -298,8 +366,20 @@ module.exports = {
   addNewStep: addNewStep,
   togglePlayTurn: togglePlayTurn,
   changePlayTurn: changePlayTurn,
-  handleNewChessMove: handleNewChessMove
+  handleNewChessMove: handleNewChessMove,
+  addMessage: addMessage,
+  getMessages: getMessages,
+  addUser: addUser,
+  removeUser: removeUser,
+  addPlayNow: addPlayNow,
+  removePlayNow: removePlayNow
 }
+
+// let user = {
+//   id: '2323',
+//   name: 'haonguyen',
+//   avatar: 'url'
+// }
 
 // let room = {
 //   id: "23io2",
@@ -326,8 +406,7 @@ module.exports = {
 // }
 
 // let message = {
-//   id: "23232",
-//   roomId: "38323030",
+//   content: ""
 //   owner: {user},
 //   date: "22-02-2020 3442"
 // }
@@ -342,7 +421,7 @@ module.exports = {
 
 // user = {
 //   accountId: "430301",
-//   username: "ei292",
+//   name: "ei292",
 //   email: "2393929@ddss",
 //   point: 232323,
 //   totalWin: 43,
