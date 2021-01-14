@@ -9,7 +9,7 @@ const nodeMailer = require('../sendMail');
 
 router.post('/register', async (req, res) => {
     //checking if the user is already in the database
-    const emailExist = await User.findOne({ email: req.body.email });
+    const emailExist = await User.findOne({ email: req.body.email, accountType: 'account' });
     if (emailExist) return res.status(400).send({ message: 'Email already exists' });
 
     //Hash the password
