@@ -3,6 +3,8 @@ const makeId = require("../util/util");
 
 let listOnline = {};
 module.exports = (io, socket) => {
+
+
   socket.emit('list-online', tempData.users);
   socket.on('new-user-online', user => {
     console.log('new-user-online ' + JSON.stringify(user));
@@ -16,10 +18,33 @@ module.exports = (io, socket) => {
     console.log(socket.user);
     if (socket.user) {
       tempData.removeUser(socket.user._id);
+      tempData.removePlayNow(socket.user);
       io.emit('list-online', tempData.users);
     }
 
-  })
+  });
+
+  socket.on('add-play-now', user => {
+    console.log('add-play-now ' + JSON.stringify(user));
+    const nowRoom = tempData.addPlayNow(user);
+    console.log('nowRoom ' + JSON.stringify(nowRoom));
+    if (nowRoom) {
+      socket.join(nowRoom.id);
+      if (nowRoom.player2) {
+        io.to(nowRoom.id).emit('new-game-id', nowRoom.id);
+        io.to(nowRoom.id).emit('room-info', nowRoom);
+      }
+    }
+  });
+
+  socket.on('remove-play-now', user => {
+    console.log('remove-play-now ' + JSON.stringify(user));
+    if (user) {
+      tempData.removePlayNow(user);
+    }
+
+  });
+
   //create game
   socket.on('create-game', (user) => {
     console.log('create-game');
@@ -91,9 +116,27 @@ module.exports = (io, socket) => {
 
   });
 
+  socket.on('surrender', (roomId, sessionPlayer) => {
+
+    const room = tempData.getRoom(roomId);
+    console.log('surrender ' + roomId);
+    if (room) {
+      room.playTurn = 0;
+      room.player1Status = false;
+      room.player2Status = false;
+
+      room.lastMatch.result = 3 - sessionPlayer[sessionPlayer.length - 1];
+      room.currentResultStatus = 3 - sessionPlayer[sessionPlayer.length - 1];
+      console.log(room);
+    }
+
+    io.to(roomId).emit('room-info', room);
+  })
+
   socket.on('stand-up', (roomId, sessionPlayer) => {
     tempData.removePlayer(roomId, sessionPlayer);
     io.to(roomId).emit('room-info', tempData.getRoom(roomId));
+    io.to(roomId).emit('end-game');
   });
 
   socket.on('message', (roomId, user, curMessage) => {
@@ -124,6 +167,8 @@ module.exports = (io, socket) => {
       }
     }));
   }, 2000);
+
+
 
 
   //

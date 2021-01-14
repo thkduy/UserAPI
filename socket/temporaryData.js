@@ -1,29 +1,59 @@
 const makeId = require("../util/util");
 const rooms = [];
 let users = [];
-const playNows = [];
+const playNowRooms = [];
 
-const addPlayNow = (user) => {
-  if (!user) {
-    return false;
-  }
-  const exUser = playNows.find((value) => value._id === user._id);
-  if (exUser) {
-    return false;
-  }
-  users.push(user);
-}
 
 const removePlayNow = (user) => {
   let index = -1;
-  for (let i = 0; i < playNows.length; i++) {
-    if (playNows[i]["_id"] === user._id) {
+  for (let i = 0; i < playNowRooms.length; i++) {
+    const room = playNowRooms[i];
+    if (room.player1 && room.player1._id === user) {
       index = i;
+      break;
+    }
+    if (room.player2 && room.player2._id === user) {
+      index = i;
+      break
+    }
+   }
+  if (index != -1) {
+    playNowRooms.splice(index, 1);
+  }
+}
+
+
+const addPlayNow = (user) => {
+  let index = -1;
+  let room;
+  for (let i = 0; i < playNowRooms.length; i++){
+    room = playNowRooms[i];
+    if (room.player2 == null) {
+      room.player2 = user;
+      index = i;
+      break;
     }
   }
-  if (index != -1) {
-    playNows.splice(index, 1);
+  if (index !== -1) {
+    addRoom(room);
+    playNowRooms.splice(index, 1);
+    return room;
   }
+  const newId = makeId(5);
+  room = {
+    id: newId,
+    player1: user,
+    player1Status: false,
+    player2: null,
+    player2Status: false,
+    currentResultStatus: -1,
+    playTurn: 0,
+    viewers: [user],
+    messages: [],
+    lastMatch: null,
+    password: ""
+  }
+  return room;
 }
 
 const addUser = (_id, name, avatar) => {
@@ -39,6 +69,7 @@ const removeUser = (_id) => {
   for (let i = 0; i < users.length; i++) {
     if (users[i]["_id"] === _id) {
       index = i;
+      break;
     }
   }
   if (index != -1) {
@@ -372,7 +403,8 @@ module.exports = {
   addUser: addUser,
   removeUser: removeUser,
   addPlayNow: addPlayNow,
-  removePlayNow: removePlayNow
+  removePlayNow: removePlayNow,
+  playNows: playNowRooms
 }
 
 // let user = {
