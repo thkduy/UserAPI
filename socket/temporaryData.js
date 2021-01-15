@@ -3,6 +3,7 @@ const Room = require('../model/Room');
 const Step = require('../model/Step');
 const Message = require('../model/Message');
 const ObjectId = require('mongodb').ObjectId;
+const UserModel = require('../model/User');
 const rooms = [];
 let users = [];
 const playNowRooms = [];
@@ -64,7 +65,7 @@ const addPlayNow = (user) => {
     player1Status: false,
     player2: null,
     player2Status: false,
-    currentResultStatus: -1,
+    currentResultStatus: -2,
     playTurn: 0,
     viewers: [user],
     messages: [],
@@ -154,7 +155,7 @@ const removePlayer = (roomId, playerNum) => {
 
   room[playerNum] = null;
   room[playerNum + 'Status'] = false;
-  room.currentResultStatus = -1;
+  room.currentResultStatus = -2;
   return true;
 }
 
@@ -415,7 +416,6 @@ const saveMatch = async (roomId) => {
 
     console.log('----save match ' + JSON.stringify(match) );
 
-
     const messages = [];
     for (let message of room.messages) {
       let newMessage = new Message({
@@ -451,6 +451,53 @@ const saveMatch = async (roomId) => {
     newRoom.save(async function (err, newBoard) {
         console.log('-------match were saved');
         //update user here
+      let dPoint = 20;
+      let dWin = 1;
+
+      const getuser1 = await UserModel.findById({ _id: room.player1._id });
+      const getuser2 = await UserModel.findById({ _id: room.player2._id });
+
+      let newNumOfMatches1;
+      let newPoint1;
+      let newTotalWin1;
+
+      let newNumOfMatches2;
+      let newPoint2;
+      let newTotalWin2;
+
+      newNumOfMatches1 = getuser1.numOfMatches + 1;
+      newNumOfMatches2 = getuser2.numOfMatches + 1;
+
+
+      if (match.result === 1) {
+        newPoint1 = getuser1.point + dPoint;
+        newTotalWin1 = getuser1.totalWin + dWin;
+
+        newPoint2 = getuser2.point - dPoint;
+      }
+      else if (match.result === 2) {
+        newPoint1 = getuser1.point - dPoint;
+
+        newPoint2 = getuser2.point - dPoint;
+        newTotalWin2 = getuser2.totalWin + dWin;
+      }
+      await UserModel.findByIdAndUpdate({  _id: room.player1._id }, { numOfMatches: newNumOfMatches1, point: newPoint1, totalWin: newTotalWin1 }, function (err, newuser) {
+        if (err) {
+          console.log("----------------update user1 err ----");
+        }
+        else {
+          console.log("----------------update user1 suc ----");
+        }
+      });
+      await UserModel.findByIdAndUpdate({  _id: room.player2._id }, { numOfMatches: newNumOfMatches2, point: newPoint2, totalWin: newTotalWin2  }, function (err, newuser) {
+        if (err) {
+          console.log("----------------update user2 err ----");
+        }
+        else {
+          console.log("----------------update user2 suc ----");
+        }
+      });
+
 
     });
 
@@ -509,7 +556,7 @@ module.exports = {
 //   player2: {user},
 //   player2Status: false,
 //   playTurn: 0,
-//   currentResultStatus: -1  // -1, 0, 1, 2
+//   currentResultStatus: -2  // -2, -1, 0, 1, 2
 //   viewers: [{user}, ],
 //   messages: [{message}, ],
 //   lastMatch: {match},

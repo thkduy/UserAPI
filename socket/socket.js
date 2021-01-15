@@ -13,19 +13,19 @@ module.exports = (io, socket) => {
     if (user) {
       socket.user = user;
       tempData.addUser(user._id, user.name, user.avatar);
-      // console.log('listUsers ' + JSON.stringify(tempData.users));
+      console.log('listUsers ' + JSON.stringify(tempData.users));
       io.emit('list-online', tempData.users);
     }
   });
   socket.on('disconnect', (reason) => {
     console.log('--------------disconnect ' + reason);
-    // console.log('socket user when disconnect ' + JSON.stringify(socket.user));
+    console.log('socket user when disconnect ' + JSON.stringify(socket.user));
     if (socket.user) {
       tempData.removeUser(socket.user._id);
       tempData.removePlayNow(socket.user);
       io.emit('list-online', tempData.users);
     }
-    // console.log('listUser after disconnect ' + JSON.stringify(tempData.users));
+    console.log('listUser after disconnect ' + JSON.stringify(tempData.users));
   });
 
   socket.on('add-play-now', user => {
@@ -60,7 +60,7 @@ module.exports = (io, socket) => {
       player1Status: false,
       player2: null,
       player2Status: false,
-      currentResultStatus: -1,
+      currentResultStatus: -2,
       playTurn: 0,
       viewers: [user],
       messages: [],
@@ -131,8 +131,11 @@ module.exports = (io, socket) => {
       room.player1Status = false;
       room.player2Status = false;
 
-      room.lastMatch.result = 3 - sessionPlayer[sessionPlayer.length - 1];
-      room.currentResultStatus = 3 - sessionPlayer[sessionPlayer.length - 1];
+      if (room.lastMatch && sessionPlayer) {
+        room.lastMatch.result = 3 - sessionPlayer[sessionPlayer.length - 1];
+        room.currentResultStatus = 3 - sessionPlayer[sessionPlayer.length - 1];
+      }
+
       room.drawRequests = [];
 
       tempData.saveMatch(roomId);
