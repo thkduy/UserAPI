@@ -4,30 +4,34 @@ const makeId = require("../util/util");
 let listOnline = {};
 module.exports = (io, socket) => {
 
-
-  socket.emit('list-online', tempData.users);
+  socket.on('required-list-online', () => {
+    console.log('------required-list-online');
+    socket.emit('list-online', tempData.users);
+  });
   socket.on('new-user-online', user => {
-    console.log('new-user-online ' + JSON.stringify(user));
+    console.log('-----new-user-online ' + JSON.stringify(user));
     if (user) {
       socket.user = user;
       tempData.addUser(user._id, user.name, user.avatar);
+      // console.log('listUsers ' + JSON.stringify(tempData.users));
+      io.emit('list-online', tempData.users);
     }
   });
   socket.on('disconnect', (reason) => {
-    console.log('disconnect ' + reason);
-    console.log(socket.user);
+    console.log('--------------disconnect ' + reason);
+    // console.log('socket user when disconnect ' + JSON.stringify(socket.user));
     if (socket.user) {
       tempData.removeUser(socket.user._id);
       tempData.removePlayNow(socket.user);
       io.emit('list-online', tempData.users);
     }
-
+    // console.log('listUser after disconnect ' + JSON.stringify(tempData.users));
   });
 
   socket.on('add-play-now', user => {
     console.log('add-play-now ' + JSON.stringify(user));
     const nowRoom = tempData.addPlayNow(user);
-    console.log('nowRoom ' + JSON.stringify(nowRoom));
+    // console.log('nowRoom ' + JSON.stringify(nowRoom));
     if (nowRoom) {
       socket.join(nowRoom.id);
       if (nowRoom.player2) {
@@ -61,7 +65,8 @@ module.exports = (io, socket) => {
       viewers: [user],
       messages: [],
       lastMatch: null,
-      password: ""
+      password: "",
+      drawRequests: []
     }
 
     tempData.addRoom(tempRoom);
@@ -97,7 +102,7 @@ module.exports = (io, socket) => {
     //check can we start here
     console.log('accept-start-new-match ' + roomId + ' ' + playerNumber)
     tempData.setPlayerStatus(roomId, playerNumber, true);
-    console.log(JSON.stringify(tempData.getRoom(roomId)));
+
     if (tempData.areAllPlayersReady(roomId)) {
       tempData.createNewMatchToRoom(roomId);
       io.to(roomId).emit('start-new-match', roomId, tempData.getPlayTurn(roomId));
@@ -111,15 +116,16 @@ module.exports = (io, socket) => {
     const gameResult = tempData.handleNewChessMove(roomId, row, col); //{playTurn, winLine}
     io.to(roomId).emit('room-info', tempData.getRoom(roomId));
     if (gameResult) {
+      tempData.saveMatch(roomId);
       io.to(roomId).emit('end-game', gameResult)
     }
 
   });
 
   socket.on('surrender', (roomId, sessionPlayer) => {
+    console.log('surrender');
 
     const room = tempData.getRoom(roomId);
-    console.log('surrender ' + roomId);
     if (room) {
       room.playTurn = 0;
       room.player1Status = false;
@@ -127,11 +133,13 @@ module.exports = (io, socket) => {
 
       room.lastMatch.result = 3 - sessionPlayer[sessionPlayer.length - 1];
       room.currentResultStatus = 3 - sessionPlayer[sessionPlayer.length - 1];
-      console.log(room);
+      room.drawRequests = [];
+
+      tempData.saveMatch(roomId);
     }
 
     io.to(roomId).emit('room-info', room);
-  })
+  });
 
   socket.on('stand-up', (roomId, sessionPlayer) => {
     tempData.removePlayer(roomId, sessionPlayer);
@@ -155,6 +163,34 @@ module.exports = (io, socket) => {
         isLock: !!value.password,
       }
     }));
+  });
+
+  socket.on('draw-request', (roomId, sessionPlayer) => {
+    const room = tempData.getRoom(roomId);
+    if (room) {
+      for (let i = 0; i< room.drawRequests.length; i++) {
+        if (room.drawRequests[i] === sessionPlayer) {
+          return ;
+        }
+      }
+      room.drawRequests.push(sessionPlayer);
+      if (room.drawRequests.length >= 2 ){
+        room.playTurn = 0;
+        room.player1Status = false;
+        room.player2Status = false;
+
+        room.lastMatch.result = 0;
+        room.currentResultStatus = 0;
+        room.drawRequests = [];
+      }
+      io.to(roomId).emit('room-info', room);
+    }
+  });
+
+  socket.on('reject-draw-request', roomId => {
+    const room = tempData.getRoom(roomId);
+    room.drawRequests = [];
+    io.to(roomId).emit('room-info', room);
   })
 
   const emitAllRoomsInterval = setInterval(() => {

@@ -1,7 +1,12 @@
 const makeId = require("../util/util");
+const Room = require('../model/Room');
+const Step = require('../model/Step');
+const Message = require('../model/Message');
+const ObjectId = require('mongodb').ObjectId;
 const rooms = [];
 let users = [];
 const playNowRooms = [];
+
 
 
 const removePlayNow = (user) => {
@@ -24,21 +29,34 @@ const removePlayNow = (user) => {
 
 
 const addPlayNow = (user) => {
-  let index = -1;
   let room;
   for (let i = 0; i < playNowRooms.length; i++){
     room = playNowRooms[i];
-    if (room.player2 == null) {
+    if (room.player1 && room.player1._id !== user._id && room.player2 == null) {
+      console.log('having available room: ' + JSON.stringify(room))
       room.player2 = user;
-      index = i;
-      break;
+      room.playTurn = 1;
+
+      const newMatch = {
+        id: makeId(5),
+        player1: room.player1,
+        player2: room.player2,
+        result: -1,  // -1, 0, 1, 2
+        firstMoveBy: 1,
+        boardState: getDefaultBoardState(),
+        steps: []
+      }
+      room.lastMatch = newMatch;
+      room.player1Status = true;
+      room.player2Status = true;
+
+      addRoom(room);
+      playNowRooms.splice(i, 1);
+      return room;
     }
   }
-  if (index !== -1) {
-    addRoom(room);
-    playNowRooms.splice(index, 1);
-    return room;
-  }
+
+  //else create new waiting room
   const newId = makeId(5);
   room = {
     id: newId,
@@ -51,8 +69,12 @@ const addPlayNow = (user) => {
     viewers: [user],
     messages: [],
     lastMatch: null,
-    password: ""
+    password: "",
+    drawRequests: []
   }
+
+  playNowRooms.push(room);
+  console.log('play now rooms after pushing: ' + JSON.stringify(playNowRooms))
   return room;
 }
 
@@ -171,7 +193,11 @@ const createNewMatchToRoom = (roomId) => {
   room.lastMatch = newMatch;
 
   room.playTurn = 1;
+  room.player1Status = true;
+  room.player2Status = true;
+
   room.currentResultStatus = -1;
+  room.drawRequests = [];
 
   return true;
 }
@@ -249,6 +275,7 @@ const handleNewChessMove = (roomId, row, col) => {
 
     room.lastMatch.result = result.playTurn;
     room.currentResultStatus = result.playTurn;
+    room.drawRequests = [];
 
     return result;
   }
@@ -381,6 +408,66 @@ const getMessages = (roomId) => {
   return room.messages;
 }
 
+const saveMatch = async (roomId) => {
+  const room = getRoom(roomId);
+  if (room && room.lastMatch) {
+    const match = room.lastMatch;
+
+    console.log('----save match ' + JSON.stringify(match) );
+
+
+    const messages = [];
+    for (let message of room.messages) {
+      let newMessage = new Message({
+        content: message.content,
+        owner: ObjectId(message.owner._id),
+        date: message.date
+      });
+      await newMessage.save();
+      messages.push(newMessage._id);
+    }
+
+    const steps = [];
+    for (let step of match.steps) {
+      let newStep = new Step({
+        stepNumber: step.stepNumber,
+        positionX: step.positionX,
+        positionY: step.positionY
+      });
+      await newStep.save();
+      steps.push(newStep._id);
+    }
+
+    const newRoom = new Room({
+      roomId: roomId,
+      player1: ObjectId(match.player1._id),
+      player2: ObjectId(match.player2._id),
+      result: match.result,
+      firstMoveBy: match.firstMoveBy,
+      messages: messages,
+      steps: steps,
+    });
+
+    newRoom.save(async function (err, newBoard) {
+        console.log('-------match were saved');
+        //update user here
+
+    });
+
+
+
+    // let match = {
+//   id: "34222",
+//   player1: {user},
+//   player2: {user},
+//   result: 1,  // -1, 0, 1, 2
+//   firstMoveBy: 1,
+//   boardState: []
+//   steps: [{step}, {step}, ]
+// }
+  }
+}
+
 module.exports = {
   rooms: rooms,
   users: users,
@@ -404,7 +491,9 @@ module.exports = {
   removeUser: removeUser,
   addPlayNow: addPlayNow,
   removePlayNow: removePlayNow,
-  playNows: playNowRooms
+  playNows: playNowRooms,
+  saveMatch: saveMatch
+
 }
 
 // let user = {
@@ -424,7 +513,8 @@ module.exports = {
 //   viewers: [{user}, ],
 //   messages: [{message}, ],
 //   lastMatch: {match},
-//   password: ""
+//   password: "
+//   drawRequests: ['player1', 'player2']
 // }
 
 // let match = {
@@ -437,11 +527,6 @@ module.exports = {
 //   steps: [{step}, {step}, ]
 // }
 
-// let message = {
-//   content: ""
-//   owner: {user},
-//   date: "22-02-2020 3442"
-// }
 
 // let step = {
 //   stepNumber: 3,

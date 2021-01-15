@@ -3,7 +3,6 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Admin = require('../model/Admin');
 
-
 router.post('/login', async (req, res) => {
     //checking if the email exists
     const admin = await Admin.findOne({email: req.body.email});
