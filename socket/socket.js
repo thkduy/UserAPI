@@ -161,7 +161,7 @@ module.exports = (io, socket) => {
     if (tempData.areAllPlayersReady(roomId)) {
       tempData.createNewMatchToRoom(roomId);
 
-      addTimeoutEvent(roomId, 5);
+      addTimeoutEvent(roomId, 45);
 
       io.to(roomId).emit('start-new-match', roomId, tempData.getPlayTurn(roomId));
       io.to(roomId).emit('room-info', tempData.getRoom(roomId));
@@ -173,7 +173,7 @@ module.exports = (io, socket) => {
     console.log('chess-move ' + roomId + ' ' + row + ' ' + col);
     clearTimeoutEvent(roomId);
     const gameResult = tempData.handleNewChessMove(roomId, row, col); //{playTurn, winLine}
-    addTimeoutEvent(roomId, 5);
+    addTimeoutEvent(roomId, 45);
     io.to(roomId).emit('room-info', tempData.getRoom(roomId));
     if (gameResult) {
       tempData.saveMatch(roomId);
