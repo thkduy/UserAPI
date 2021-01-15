@@ -2,9 +2,6 @@ const tempData = require("./temporaryData");
 const makeId = require("../util/util");
 
 let listOnline = {};
-
-
-
 module.exports = (io, socket) => {
 
   const addTimeoutEvent = (roomId, second) => {
@@ -86,7 +83,7 @@ module.exports = (io, socket) => {
   });
 
   //create game
-  socket.on('create-game', (user) => {
+  socket.on('create-game', (user, password) => {
     console.log('create-game');
     //const {player} = createRoom({id: socket.id, user});
     const newId = makeId(5);
@@ -101,7 +98,7 @@ module.exports = (io, socket) => {
       viewers: [user],
       messages: [],
       lastMatch: null,
-      password: "",
+      password: password ? password : "",
       drawRequests: []
     }
 
@@ -112,9 +109,29 @@ module.exports = (io, socket) => {
     //io.to(tempRoom.roomId).emit('roomPlayer', { roomId: player.roomId, players: getPlayers(player.roomId) });
   });
   //join game
-  socket.on('join-game', (roomId, user, callback) => {
+  socket.on('join-game', (roomId, user, password, callback) => {
     console.log('join-game');
     try {
+      if (password !== tempData.getRoom(roomId).password) {
+        callback('Wrong password');
+      }
+      tempData.addViewerToRoom(roomId, user);
+      socket.join(roomId);
+      io.to(roomId).emit('room-info', tempData.getRoom(roomId));
+      callback();
+    } catch (e) {
+      callback(e.message);
+    }
+  });
+
+  //join game on path
+  socket.on('join-game-on-path', (roomId, user, password, callback) => {
+    console.log('join-game');
+    try {
+      if (password !== tempData.getRoom(roomId).password) {
+        // callback('Wrong password');
+        //return;
+      }
       tempData.addViewerToRoom(roomId, user);
       socket.join(roomId);
       io.to(roomId).emit('room-info', tempData.getRoom(roomId));
@@ -126,9 +143,11 @@ module.exports = (io, socket) => {
 
   //set-player
   socket.on('set-player', (roomId, playerNum, user) => {
+    console.log('set-player ' + roomId + ' ' + playerNum)
     tempData.setPlayer(roomId, playerNum, user);
     io.to(roomId).emit('room-info', tempData.getRoom(roomId));
     if (tempData.canCreateNewMatch(roomId)) {
+      console.log('ask-for-starting-new-match');
       io.to(roomId).emit('ask-for-starting-new-match', roomId);
     }
   });
@@ -178,6 +197,7 @@ module.exports = (io, socket) => {
       }
 
       room.drawRequests = [];
+      clearTimeoutEvent(roomId);
 
       tempData.saveMatch(roomId);
     }
@@ -227,6 +247,8 @@ module.exports = (io, socket) => {
         room.lastMatch.result = 0;
         room.currentResultStatus = 0;
         room.drawRequests = [];
+
+        clearTimeoutEvent(roomId);
       }
       io.to(roomId).emit('room-info', room);
     }

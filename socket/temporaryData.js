@@ -256,7 +256,6 @@ const addNewStep = (room, posX, posY) => {
   return newBoardCellState;
 }
 
-
 const handleNewChessMove = (roomId, row, col) => {
   const room = getRoom(roomId);
   if (!room || !room.lastMatch || !(room.player1Status || room.player2Status || room.playTurn)){
