@@ -5,6 +5,18 @@ const RoomModel = require('../model/Room');
 const Step = require('../model/Step');
 const Message = require('../model/Message');
 
+router.get('/get-info', async (req, res)=>{
+    const idUser = req.query.id; 
+    await UserModel.findById(idUser,function(err, user) {
+        user.password = undefined;
+        if (err) {
+          console.log(err);
+        } else {
+          res.status(200).send({data:user});
+        }
+    });
+});
+
 router.get('/rank', async (req, res) => {
     const fields = {name:1, email:1, avatar:1, accountType:1, point: 1, totalWin: 1, numOfMatches:1};
     const users = await UserModel.find({}, fields, function (err, result) {
