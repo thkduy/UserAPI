@@ -2,7 +2,42 @@ const tempData = require("./temporaryData");
 const makeId = require("../util/util");
 
 let listOnline = {};
+
+
+
 module.exports = (io, socket) => {
+
+  const addTimeoutEvent = (roomId, second) => {
+    tempData.timeouts[roomId] = setTimeout(() => {
+      const room = tempData.getRoom(roomId);
+      if (room) {
+
+        if (room.lastMatch) {
+          room.lastMatch.result = 3 - room.playTurn;
+          room.currentResultStatus = 3 - room.playTurn;
+        }
+
+        room.playTurn = 0;
+        room.player1Status = false;
+        room.player2Status = false;
+        room.drawRequests = [];
+
+        tempData.saveMatch(roomId);
+
+        io.to(roomId).emit('room-info', tempData.getRoom(roomId));
+
+        clearTimeout(tempData.timeouts.roomId);
+        tempData.timeouts.roomId = null;
+      }
+    }, second * 1000);
+  }
+
+  const clearTimeoutEvent = (roomId) => {
+    if (tempData.timeouts[roomId]) {
+      clearTimeout(tempData.timeouts[roomId]);
+      tempData.timeouts[roomId] = null;
+    }
+  }
 
   socket.on('required-list-online', () => {
     console.log('------required-list-online');
@@ -36,7 +71,8 @@ module.exports = (io, socket) => {
       socket.join(nowRoom.id);
       if (nowRoom.player2) {
         io.to(nowRoom.id).emit('new-game-id', nowRoom.id);
-        io.to(nowRoom.id).emit('room-info', nowRoom);
+        addTimeoutEvent(nowRoom.id, 45);
+        // io.to(nowRoom.id).emit('room-info', nowRoom);
       }
     }
   });
@@ -105,6 +141,9 @@ module.exports = (io, socket) => {
 
     if (tempData.areAllPlayersReady(roomId)) {
       tempData.createNewMatchToRoom(roomId);
+
+      addTimeoutEvent(roomId, 5);
+
       io.to(roomId).emit('start-new-match', roomId, tempData.getPlayTurn(roomId));
       io.to(roomId).emit('room-info', tempData.getRoom(roomId));
     }
@@ -113,7 +152,9 @@ module.exports = (io, socket) => {
   //handle chess moves
   socket.on('chess-move', (roomId, row, col) => {
     console.log('chess-move ' + roomId + ' ' + row + ' ' + col);
+    clearTimeoutEvent(roomId);
     const gameResult = tempData.handleNewChessMove(roomId, row, col); //{playTurn, winLine}
+    addTimeoutEvent(roomId, 5);
     io.to(roomId).emit('room-info', tempData.getRoom(roomId));
     if (gameResult) {
       tempData.saveMatch(roomId);

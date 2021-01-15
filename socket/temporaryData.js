@@ -7,6 +7,7 @@ const UserModel = require('../model/User');
 const rooms = [];
 let users = [];
 const playNowRooms = [];
+const timeouts = {};
 
 
 
@@ -42,7 +43,7 @@ const addPlayNow = (user) => {
         id: makeId(5),
         player1: room.player1,
         player2: room.player2,
-        result: -1,  // -1, 0, 1, 2
+        result: -1,  // -2, -1, 0, 1, 2
         firstMoveBy: 1,
         boardState: getDefaultBoardState(),
         steps: []
@@ -510,17 +511,6 @@ const saveMatch = async (roomId) => {
       });
     });
 
-
-
-    // let match = {
-//   id: "34222",
-//   player1: {user},
-//   player2: {user},
-//   result: 1,  // -1, 0, 1, 2
-//   firstMoveBy: 1,
-//   boardState: []
-//   steps: [{step}, {step}, ]
-// }
   }
 }
 
@@ -548,7 +538,8 @@ module.exports = {
   addPlayNow: addPlayNow,
   removePlayNow: removePlayNow,
   playNows: playNowRooms,
-  saveMatch: saveMatch
+  saveMatch: saveMatch,
+  timeouts: timeouts
 
 }
 
