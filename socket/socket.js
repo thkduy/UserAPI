@@ -145,6 +145,7 @@ module.exports = (io, socket) => {
   });
 
   socket.on('stand-up', (roomId, sessionPlayer) => {
+    console.log('-----------stand-up' + roomId + ' ' + sessionPlayer);
     tempData.removePlayer(roomId, sessionPlayer);
     io.to(roomId).emit('room-info', tempData.getRoom(roomId));
     io.to(roomId).emit('end-game');
