@@ -176,6 +176,7 @@ module.exports = (io, socket) => {
     addTimeoutEvent(roomId, 45);
     io.to(roomId).emit('room-info', tempData.getRoom(roomId));
     if (gameResult) {
+      clearTimeoutEvent(roomId);
       tempData.saveMatch(roomId);
       io.to(roomId).emit('end-game', gameResult)
     }
