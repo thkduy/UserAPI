@@ -10,13 +10,13 @@ require('./auth/passport');
 app.use(bodyParser.urlencoded({ extended: false }));
 const mongoose = require('mongoose');
 const cors = require('cors');
-
+app.use(cors());
 const io = require('socket.io')(http, {
     cors: {
         origin: '*',
     }
 });
-app.use('*', cors());
+
 
 app.use(express.json());
 
