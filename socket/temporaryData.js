@@ -423,8 +423,17 @@ const saveMatch = async (roomId) => {
 
     //----------------------------------------
 
-    const player1Id = room.lastMatch?.player1?._id;
-    const player2Id = room.lastMatch?.player2?._id;
+    let player1Id;
+    let player2Id;
+
+    if (room && room.lastMatch) {
+      if (room.lastMatch.player1) {
+        player1Id = room.lastMatch.player1._id;
+      }
+      if (room.lastMatch.player2) {
+        player2Id = room.lastMatch.player2._id;
+      }
+    }
 
     //-----------------------------------------
 
